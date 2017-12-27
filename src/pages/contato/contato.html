@@ -1,0 +1,33 @@
+<ion-header>
+ 
+  <ion-navbar>
+  <button ion-button menuToggle>
+    <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Contato</ion-title>
+  </ion-navbar>
+
+</ion-header>
+<ion-content>
+ <ion-label>Mensagem</ion-label>
+<label class="item item-input text">
+          <textarea style="width:100%" placeholder="Digite aqui sua mensagem" rows="7" ng-model="email.body" ng-Required="true" name="description"></textarea>
+        </label>
+		  <button ion-button type="submit" block ng-click="sendEmail()" style="background-color: #00008B; width: 45%; margin: auto;">
+       ENVIAR
+      </button>
+	  
+	  <br>
+	  <br>
+ <ion-label>
+<ion-icon item-left name="phone-portrait">
+</ion-icon>  (71)999957962
+</ion-label>
+
+ <ion-label>
+ <ion-icon name="mail" item-left>
+</ion-icon>  suporte@interakt.com.br
+ </ion-label>
+ <br>
+<ion-label>Equipe Smart Security</ion-label>
+</ion-content>

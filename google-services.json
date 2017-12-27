@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "331854874035",
+    "firebase_url": "https://hermes-4dc8c.firebaseio.com",
+    "project_id": "hermes-4dc8c",
+    "storage_bucket": "hermes-4dc8c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331854874035:android:764d2cb7da3280eb",
+        "android_client_info": {
+          "package_name": "io.ionic.starter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "331854874035-pbkc47ibov4gn7cq76or0reqqj81ijev.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiXFdBzFwD6A5wxtDc73zcG5URZwbhRjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

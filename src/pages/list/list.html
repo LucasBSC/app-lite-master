@@ -1,0 +1,29 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Histórico</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-item>
+    <ion-label>Placa</ion-label>
+    <ion-select [(ngModel)]="selected_smart_code" (ionChange)="onSmartCodeSelected($event)">
+      <ion-option *ngFor="let userCar of userCars" value="{{userCar.smart_code}}">{{userCar.plate | uppercase}}</ion-option>
+    </ion-select>
+  </ion-item>
+
+  <ion-list>
+      <button ion-item (click)="push(item.$key, item.latitude, item.longitude)" *ngFor="let item of items | async" style="font-family:Helvetica; padding-left: 1px; padding-right: 1px;">
+        <ion-icon name="pin" item-start></ion-icon>
+        <span style="font-weight: bold;"> {{item.creationDate | date :  "dd/MM/y hh:mm" }} </span>
+        <span style="margin-left: 5px; margin-right:5px"> - </span>
+        <span> {{item.eventType | uppercase}} </span>
+      </button>
+  </ion-list>
+  
+</ion-content>
+
+
