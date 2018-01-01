@@ -1,5 +1,9 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { NavController } from 'ionic-angular';
+import { Observable } from 'rxjs/Observable';
+import { AngularFireAuth } from 'angularfire2/auth';
+import { AngularFireDatabase } from 'angularfire2/database';
+import { UsersProvider } from '../../providers/users/users';
 
 import {
   GoogleMaps,
@@ -18,8 +22,20 @@ import {
 export class HomePage {
   @ViewChild('map') mapRef: ElementRef;
   map: any;
+  events: Observable<any[]>;
+  currentMarker: any;
+  car: any;
 
-  constructor(public navCtrl: NavController) {
+  constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
+    var currentUser = this.usersProvider.findByUid(this.afAuth.auth.currentUser.uid);
+    console.log(this.afAuth.auth.currentUser);
+    currentUser.subscribe((users) => {
+      //console.log(users);
+      let userCars = users[0]['cars'];
+      Object.keys(userCars).map(key => { 
+        this.car = userCars[key];
+      });
+    })
   }
 
   ionViewDidLoad() {
@@ -35,8 +51,6 @@ export class HomePage {
       },
       camera: {
         target: {
-          // lat: -12.9996967,
-          // long: -38.510406
           lat: -12.999490,
           lng: -38.510411
         },
@@ -47,25 +61,59 @@ export class HomePage {
     this.map = GoogleMaps.create('map', mapOptions);
     this.map.one(GoogleMapsEvent.MAP_READY)
       .then(() => {
-        this.map.addMarker({
-          title: 'Cliente1,Carro:Audi a8,Telefone:91919293',
-		  
-          icon: 'blue',
-          animation: 'DROP',
-          position: {
-            // lat: -12.9996967,
-            // long: -38.510406
-            lat: -12.999490,
-            lng: -38.510411
+        console.log('carimei', this.car);
+        this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(this.car.Imei)).valueChanges()
+        .subscribe(result => {
+          // Recupera o ultimo tracker
+          console.log('events', result);
+          var lastTracker = null;
+          Object.keys(result).map(key => { 
+            if(result[key].Tipo.toLowerCase() == 'tracker') {
+              lastTracker = result[key];
+            }
+          });
+
+          // Se nenhum evento de tracker for encontrado, a função é encerrada
+          if(!lastTracker) {
+            return;
           }
-        })
+
+          // Divide o lat e lng por 100 devido a forma de retorno do serviço
+          console.log('event', lastTracker);
+          lastTracker.Latitude /= 100;
+          lastTracker.Longitude /= 100;
+          lastTracker.Latitude *= -1;
+          lastTracker.Longitude *= -1;
+          
+          // Remove o marker anterior
+          if(this.currentMarker != null) {
+            this.currentMarker.setMap(null);
+          }
+          console.log('car', this.car);
+          console.log('event - edited', lastTracker);
+          // Adiciona o novo marker
+          const latlng = {
+            lat: lastTracker.Latitude,
+            lng: lastTracker.Longitude
+          };
+          this.map.animateCamera({
+            'target': latlng,
+          }, function() {
+            console.log("Camera position changed.");
+          });
+          this.currentMarker = this.map.addMarker({
+            title: this.car.Modelo + ' - ' + this.car.Cor + ' (' + this.car.Placa + ')',
+            icon: 'blue',
+            animation: 'DROP',
+            position: latlng
+          })
           .then(marker => {
             marker.on(GoogleMapsEvent.MARKER_CLICK)
               .subscribe(() => {
 
               });
           });
-
+        });
       });
   }
 
