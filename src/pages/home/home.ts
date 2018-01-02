@@ -80,10 +80,10 @@ export class HomePage {
 
           // Divide o lat e lng por 100 devido a forma de retorno do serviço
           console.log('event', lastTracker);
-          lastTracker.Latitude /= 100;
-          lastTracker.Longitude /= 100;
-          lastTracker.Latitude *= -1;
-          lastTracker.Longitude *= -1;
+          //lastTracker.Latitude /= 100;
+          //lastTracker.Longitude /= 100;
+          //lastTracker.Latitude *= -1;
+          //lastTracker.Longitude *= -1;
           
           // Remove o marker anterior
           if(this.currentMarker != null) {
