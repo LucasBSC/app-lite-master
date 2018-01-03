@@ -17,6 +17,13 @@ import { User } from '../../models/user';
   templateUrl: 'login.html',
 })
 export class LoginPage {
+isActiveToggleTextPassword: Boolean = true;
+  public toggleTextPassword(): void{
+      this.isActiveToggleTextPassword = (this.isActiveToggleTextPassword==true)?false:true;
+  }
+  public getType() {
+      return this.isActiveToggleTextPassword ? 'password' : 'text';
+  }
 
   user = {} as User;
 
