@@ -34,7 +34,6 @@
     "cordova-browser": "5.0.1",
     "cordova-ios": "^4.5.4",
     "cordova-plugin-device": "^1.1.7",
-    "cordova-plugin-email-composer": "^0.8.11",
     "cordova-plugin-geolocation": "^3.0.0",
     "cordova-plugin-googlemaps": "^2.1.1",
     "cordova-plugin-googlemaps-sdk": "git+https://github.com/mapsplugin/cordova-plugin-googlemaps-sdk.git",
@@ -68,7 +67,6 @@
         "LOCATION_WHEN_IN_USE_DESCRIPTION": "Show your location on the map",
         "LOCATION_ALWAYS_USAGE_DESCRIPTION": "Trace your location on the map"
       },
-      "cordova-plugin-email-composer": {},
       "cordova-plugin-geolocation": {
         "GEOLOCATION_USAGE_DESCRIPTION": ""
       },

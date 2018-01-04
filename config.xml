@@ -88,7 +88,6 @@
         <variable name="LOCATION_WHEN_IN_USE_DESCRIPTION" value="Show your location on the map" />
         <variable name="LOCATION_ALWAYS_USAGE_DESCRIPTION" value="Trace your location on the map" />
     </plugin>
-    <plugin name="cordova-plugin-email-composer" spec="^0.8.11" />
     <plugin name="cordova-plugin-geolocation" spec="^3.0.0">
         <variable name="GEOLOCATION_USAGE_DESCRIPTION" value="" />
     </plugin>

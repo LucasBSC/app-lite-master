@@ -2,7 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
-// import { NavController } from 'ionic-angular';
+import { NavController } from 'ionic-angular';
 import { AngularFireAuth } from 'angularfire2/auth';
 import { AlertController } from 'ionic-angular';
 import { PagamentoPage } from '../pages/pagamento/pagamento';
