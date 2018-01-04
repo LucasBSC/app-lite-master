@@ -77,31 +77,24 @@ export class HomePage {
           if(!lastTracker) {
             return;
           }
-
-          // Divide o lat e lng por 100 devido a forma de retorno do serviço
-          console.log('event', lastTracker);
-          //lastTracker.Latitude /= 100;
-          //lastTracker.Longitude /= 100;
-          //lastTracker.Latitude *= -1;
-          //lastTracker.Longitude *= -1;
           
+
+          this.map.clear()
           // Remove o marker anterior
-          if(this.currentMarker != null) {
-            this.currentMarker.setMap(null);
-          }
-          console.log('car', this.car);
-          console.log('event - edited', lastTracker);
-          // Adiciona o novo marker
           const latlng = {
             lat: lastTracker.Latitude,
             lng: lastTracker.Longitude
           };
+          console.log('car', this.car);
+          console.log('event', lastTracker);
+          // Adiciona o novo marker
+          
           this.map.animateCamera({
             'target': latlng,
           }, function() {
             console.log("Camera position changed.");
           });
-          this.currentMarker = this.map.addMarker({
+          this.map.addMarker({
             title: this.car.Modelo + ' - ' + this.car.Cor + ' (' + this.car.Placa + ')',
             icon: 'blue',
             animation: 'DROP',
