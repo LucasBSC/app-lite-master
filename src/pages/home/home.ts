@@ -26,6 +26,10 @@ export class HomePage {
   currentMarkers: any[] = [];
   cars: any[] = [];
   currentUser: any;
+  
+  shareButtonColor: string = "";
+  shareButtonShow: boolean = false;
+  shareButtonText: string = "COMPARTILHAR LOCALIZAÇÃO";
 
   constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
     
@@ -38,6 +42,8 @@ export class HomePage {
     user.subscribe((users) => {
       // Carrega os carros do dono
       this.currentUser = users[0];
+      console.log("current user", this.currentUser);
+      this.changeShareButtonStyle(this.currentUser.share);
       let userCars = users[0]['cars'];
       Object.keys(userCars).map(key => {
         try{
@@ -188,9 +194,15 @@ export class HomePage {
  
   onSharePositionClick() : void {
     console.log(this.currentUser);
-    this.db.database.ref("/users/"  + this.currentUser.uid).set({share: true});
-    this.usersProvider.updateUser(this.currentUser.uid, {share: true});
-    
+      this.currentUser.share = !this.currentUser.share;
+      this.usersProvider.updateUser(this.currentUser.uid, this.currentUser);
+      this.changeShareButtonStyle(this.currentUser.share);
+  }
+
+  changeShareButtonStyle(sharing : boolean) {
+    this.shareButtonShow = true;
+    this.shareButtonColor = sharing ? "green" : "#8B1C00"
+    this.shareButtonText = sharing ? "PARAR COMPARTILHAMENTO" : "COMPARTILHAR LOCALIZAÇÃO";
   }
 
 }

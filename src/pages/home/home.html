@@ -12,9 +12,8 @@
   <div #map id="map" style="width: 100%; max-height: 620px">
   </div>
   <ion-footer no-border style="padding-left: 52px;height:68px;">
-
-    <button ion-button round style="background-color: #8B1C00; width: 81%" (click)='onSharePositionClick();'>
-      COMPARTILHAR LOCALIZAÇÃO
+    <button ion-button round *ngIf="shareButtonShow" [ngStyle]="{'background-color': shareButtonColor}" style="width: 81%" (click)='onSharePositionClick();'>
+      {{shareButtonText}}
     </button>
 
   </ion-footer>
