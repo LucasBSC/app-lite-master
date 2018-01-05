@@ -151,18 +151,18 @@ export class HomePage {
       }
 
       if(this.currentMarkers[lastTracker.Imei]) {
-        this.currentMarkers[lastTracker.Imei].remove();
+        this.currentMarkers[lastTracker.Imei].setPosition(latlng);
+      } else {
+        this.map.addMarker({
+          title: car.Modelo + ' ' + car.Cor + " - " + car.Ano +  ' (' + car.Placa + ')',
+          icon: car.mine ? 'blue' : 'yellow',
+          animation: 'DROP',
+          position: latlng
+        })
+        .then(marker => {
+          this.currentMarkers[lastTracker.Imei] = marker;
+        });          
       }
-
-      this.map.addMarker({
-        title: car.Modelo + ' ' + car.Cor + " - " + car.Ano +  ' (' + car.Placa + ')',
-        icon: car.mine ? 'blue' : 'yellow',
-        animation: 'DROP',
-        position: latlng
-      })
-      .then(marker => {
-        this.currentMarkers[lastTracker.Imei] = marker;
-      });        
     });
   }
 
