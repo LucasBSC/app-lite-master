@@ -25,24 +25,61 @@ export class HomePage {
   events: Observable<any[]>;
   currentMarkers: any[] = [];
   cars: any[] = [];
+  currentUser: any;
 
   constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
     
   }
 
   ionViewDidLoad() {
-    // this.showMap();
-    // this.printSelector();
-    //this.loadGoogleMap();
-    var currentUser = this.usersProvider.findByUid(this.afAuth.auth.currentUser.uid);
+    // Carrega o usuário atual
+    const user = this.usersProvider.findByUid(this.afAuth.auth.currentUser.uid);
     
-    currentUser.subscribe((users) => {
-      //console.log(users);
+    user.subscribe((users) => {
+      // Carrega os carros do dono
+      this.currentUser = users[0];
       let userCars = users[0]['cars'];
-      Object.keys(userCars).map(key => { 
-        this.cars.push(userCars[key]);
+      Object.keys(userCars).map(key => {
+        try{
+          userCars[key]["mine"] = true; 
+          this.cars.push(userCars[key]);
+        } catch (err) {
+          console.log("mine");
+          console.log(err);
+        }
       });
+      
+      // Carrega os carros compartilhados
+      let sharedUsers = users[0]['sharedWithMe'];
+      Object.keys(sharedUsers).map(key => {
+        // Sub nos usuarios que compartilham com o usuario logado
+        const sharedUser = this.usersProvider.findByUid(sharedUsers[key]);
+        sharedUser.subscribe((users) => {
+          const user : any = users[0];
+          const sharedCars = user['cars'];
 
+          // Varre os carros do usuario compartilhdador
+          Object.keys(sharedCars).map(key => {
+            const car = this.findCarByImei(sharedCars[key]['Imei']);
+
+            // Verifica se o usuário está compartilhando os carros
+            if(user.share){
+              sharedCars[key]["mine"] = false;
+              sharedCars[key]["sharing"] = true;
+              if(car) {
+                this.cars[car['Imei']] = sharedCars[key];
+                this.currentMarkers[car['Imei']].setVisible(true);
+              } else {
+                this.cars.push(sharedCars[key]);
+                this.subscribeCarByImei(sharedCars[key]['Imei']);
+              }
+            } else if(car){
+              car['sharing'] = false;
+              this.currentMarkers[car['Imei']].setVisible(false);  
+            }
+          });
+        }) 
+      });
       this.loadGoogleMap();
     })
   }
@@ -70,86 +107,90 @@ export class HomePage {
         }
 
         for(var i = 0; i < this.cars.length; i++) {
-          this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(this.cars[i].Imei)).valueChanges()
-          .subscribe(result => {
-            // Recupera o ultimo tracker
-            console.log('events', result);
-            var lastTracker = null;
-            Object.keys(result).map(key => { 
-              if(result[key].Tipo.toLowerCase() == 'tracker') {
-                lastTracker = result[key];
-              }
-            });
-  
-            // Se nenhum evento de tracker for encontrado, a função é encerrada
-            if(!lastTracker) {
-              return;
-            }
-            console.log(lastTracker);
-
-            const latlng = {
-              lat: lastTracker.Latitude,
-              lng: lastTracker.Longitude
-            };
-            
-            // Anima a camera apenas se existir um carro
-            if(this.cars.length == 1) {
-              this.map.animateCamera({
-                'target': latlng,
-              }, function() {
-                console.log("Camera position changed.");
-              });
-            }
-            
-            // Adiciona marcador do carro
-            const car = this.findCarByImei(lastTracker.Imei);
-
-            if(this.currentMarkers[lastTracker.Imei]) {
-              this.currentMarkers[lastTracker.Imei].remove();
-            }
-
-            this.map.addMarker({
-              title: car.Modelo + ' ' + car.Cor + " - " + car.Ano +  ' (' + car.Placa + ')',
-              icon: 'blue',
-              animation: 'DROP',
-              position: latlng
-            })
-            .then(marker => {
-              this.currentMarkers[lastTracker.Imei] = marker;
-            });        
-          });
+          this.subscribeCarByImei(this.cars[i].Imei);
         }
-        
       });
   }
 
-  findCarByImei(imei: String) : any{
+  subscribeCarByImei(imei : string) {
+    this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges()
+    .subscribe(result => {
+      // Recupera o ultimo tracker
+      console.log('events', result);
+      var lastTracker = null;
+      Object.keys(result).map(key => { 
+        if(result[key].Tipo.toLowerCase() == 'tracker') {
+          lastTracker = result[key];
+        }
+      });
+
+      // Se nenhum evento de tracker for encontrado, a função é encerrada
+      if(!lastTracker) {
+        return;
+      }
+      console.log(lastTracker);
+
+      const latlng = {
+        lat: lastTracker.Latitude,
+        lng: lastTracker.Longitude
+      };
+      
+      // Anima a camera apenas se existir um carro
+      if(this.countVisibleCars() == 1) {
+        this.map.animateCamera({
+          'target': latlng,
+        }, function() {
+          console.log("Camera position changed.");
+        });
+      }
+      
+      // Adiciona marcador do carro
+      const car = this.findCarByImei(lastTracker.Imei);
+      if(!car.mine && !car.sharing) {
+        return;
+      }
+
+      if(this.currentMarkers[lastTracker.Imei]) {
+        this.currentMarkers[lastTracker.Imei].remove();
+      }
+
+      this.map.addMarker({
+        title: car.Modelo + ' ' + car.Cor + " - " + car.Ano +  ' (' + car.Placa + ')',
+        icon: car.mine ? 'blue' : 'yellow',
+        animation: 'DROP',
+        position: latlng
+      })
+      .then(marker => {
+        this.currentMarkers[lastTracker.Imei] = marker;
+      });        
+    });
+  }
+
+  findCarByImei(imei: string) : any{
     for(var i = 0; i < this.cars.length; i++) {
       if(this.cars[i].Imei == imei) {
         return this.cars[i];
       }
     }
+    return null;
   }
-  // showMap() {
-  //   // location: Lat, Long
-  //   const location = new google.maps.LatLng(-12.9995586,-38.5106808);
 
-  //   // Map options
-  //   const options = {
-  //     center: location,
-  //     zoom: 17
-  //   }
+  countVisibleCars() : number {
+    var count = 0;
+    for(var i = 0; i < this.cars.length; i++) {
+      if(this.cars[i].mine || this.cars[i].sharing) {
+        count++;
+      }
+    }
 
-  //   const map = new google.maps.Map(this.mapRef.nativeElement, options);
-
-  //   this.addMarker(location, map);
-  // }
-
-  // addMarker(position, map) {
-  //   return new google.maps.Marker({
-  //     position,
-  //     map
-  //   });
-  // }
+    return count;
+  }
+ 
+  onSharePositionClick() : void {
+    console.log(this.currentUser);
+    this.db.database.ref("/users/"  + this.currentUser.uid).set({share: true});
+    this.usersProvider.updateUser(this.currentUser.uid, {share: true});
+    
+  }
 
 }
