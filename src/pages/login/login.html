@@ -8,7 +8,7 @@
 
 <ion-content padding>
 
-  <img src="assets/imgs/logo.png" alt="" style="margin: auto;display: block; padding-top: 25%;">
+  <img src="assets/imgs/newLogo.png" alt="" style="margin: auto;display: block; padding-top: 25%;">
 
   <form (ngSubmit)="login(user)">
     <ion-item>
@@ -21,14 +21,14 @@
       <ion-input type="password" [(ngModel)]="user.password" name="password" [type]="getType()"></ion-input>
 	   <!-- <ion-icon  name="eye" item-right (click)="toggleTextPassword()"></ion-icon> -->
     </ion-item>
-    <div style="padding-top: 30px;">
+    <div style="padding-top: 10px;">
+	  <div class="esquecisenha" style="padding-top: 2px; padding-bottom: 8%">
+       <span class="password" style="padding-left: 60%;"(click)="doPromptContato()"> <a href="#">Entrar em contato</a></span> 
+      </div>
       <button ion-button type="submit" block style="background-color: #00008B; width: 90%; margin: auto;">
         ENTRAR
       </button>
     </div>
   </form>
-  <div class="interakt-footer" style="width:200px;height:45px;overflow:hidden;">
-
-    <img src="assets/imgs/powered.png" width="200px" height="20px">
-  </div>
+  
  </ion-content>

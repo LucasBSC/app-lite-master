@@ -3,7 +3,7 @@ import { AngularFireAuth } from 'angularfire2/auth';
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams, ToastController } from 'ionic-angular';
 import { User } from '../../models/user';
-
+import { AlertController } from 'ionic-angular';
 /**
  * Generated class for the LoginPage page.
  *
@@ -31,7 +31,8 @@ isActiveToggleTextPassword: Boolean = true;
     private afAuth: AngularFireAuth,
     private toast: ToastController,
     public navCtrl: NavController,
-    public navParams: NavParams
+    public navParams: NavParams,
+	public Alert: AlertController
   ) { }
 
   ionViewWillLoad() {
@@ -59,5 +60,23 @@ isActiveToggleTextPassword: Boolean = true;
           duration: 3000
         }).present();
       });
+  }
+  doPromptContato() {
+     let alert = this.Alert.create({
+       title: '&nbsp &nbsp &nbsp &nbsp &nbsp CONTATO',
+       subTitle: '<p><br>&nbsp &nbsp &nbsp &nbsp &nbsp 55 71 99652-0947 <br/> <br> &nbsp &nbsp  contato@interakt.com.br</p><br><br><br>&nbsp &nbsp &nbsp &nbsp &nbsp  Equipe INTERAKT.',    
+  
+       buttons: [
+         {
+           text: 'OK',
+           handler: (data: any) => {
+             console.log('Cancel clicked');
+           }
+         },
+         
+       ]
+     });
+ 
+     alert.present();
   }
 }
