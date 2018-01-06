@@ -31,6 +31,9 @@ export class HomePage {
   shareButtonShow: boolean = false;
   shareButtonText: string = "COMPARTILHAR LOCALIZAÇÃO";
 
+  ONE_CAR_ZOOM_LEVEL: number = 15;
+  MANY_CARS_ZOOM_LEVEL: number = 11;
+
   constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
     
   }
@@ -100,7 +103,7 @@ export class HomePage {
           lat: -12.999490,
           lng: -38.510411
         },
-        zoom: 15,
+        zoom: this.ONE_CAR_ZOOM_LEVEL,
         tilt: 30
       }
     };
@@ -109,7 +112,7 @@ export class HomePage {
       .then(() => {
 
         if(this.cars.length > 1) {
-          this.map.setCameraZoom(11);
+          this.map.setCameraZoom(this.MANY_CARS_ZOOM_LEVEL);
         }
 
         for(var i = 0; i < this.cars.length; i++) {
