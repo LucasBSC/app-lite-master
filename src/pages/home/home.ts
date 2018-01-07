@@ -19,20 +19,25 @@ import {
   selector: 'page-home',
   templateUrl: 'home.html'
 })
+
+
 export class HomePage {
+  
   @ViewChild('map') mapRef: ElementRef;
   map: any;
   events: Observable<any[]>;
   currentMarkers: any[] = [];
   cars: any[] = [];
   currentUser: any;
+  sharingPosition: boolean;
   
   shareButtonColor: string = "";
   shareButtonShow: boolean = false;
   shareButtonText: string = "COMPARTILHAR LOCALIZAÇÃO";
 
-  ONE_CAR_ZOOM_LEVEL: number = 15;
-  MANY_CARS_ZOOM_LEVEL: number = 11;
+  DEFAULT_ZOOM_LEVEL: number = 11;
+  DEFAULT_PANIC_ON: "help me";
+  DEFAULT_PANIC_OFF: "help me"
 
   constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
     
@@ -46,16 +51,10 @@ export class HomePage {
       // Carrega os carros do dono
       this.currentUser = users[0];
       console.log("current user", this.currentUser);
-      this.changeShareButtonStyle(this.currentUser.share);
       let userCars = users[0]['cars'];
       Object.keys(userCars).map(key => {
-        try{
-          userCars[key]["mine"] = true; 
-          this.cars.push(userCars[key]);
-        } catch (err) {
-          console.log("mine");
-          console.log(err);
-        }
+        userCars[key]["mine"] = true; 
+        this.cars.push(userCars[key]);
       });
       
       // Carrega os carros compartilhados
@@ -69,23 +68,9 @@ export class HomePage {
 
           // Varre os carros do usuario compartilhdador
           Object.keys(sharedCars).map(key => {
-            const car = this.findCarByImei(sharedCars[key]['Imei']);
-
-            // Verifica se o usuário está compartilhando os carros
-            if(user.share){
-              sharedCars[key]["mine"] = false;
-              sharedCars[key]["sharing"] = true;
-              if(car) {
-                this.cars[car['Imei']] = sharedCars[key];
-                this.currentMarkers[car['Imei']].setVisible(true);
-              } else {
-                this.cars.push(sharedCars[key]);
-                this.subscribeCarByImei(sharedCars[key]['Imei']);
-              }
-            } else if(car){
-              car['sharing'] = false;
-              this.currentMarkers[car['Imei']].setVisible(false);  
-            }
+            sharedCars[key]["mine"] = false; 
+            sharedCars[key]["sharing"] = false; 
+            this.cars.push(sharedCars[key]);
           });
         }) 
       });
@@ -103,18 +88,13 @@ export class HomePage {
           lat: -12.999490,
           lng: -38.510411
         },
-        zoom: this.ONE_CAR_ZOOM_LEVEL,
+        zoom: this.DEFAULT_ZOOM_LEVEL,
         tilt: 30
       }
     };
     this.map = GoogleMaps.create('map', mapOptions);
     this.map.one(GoogleMapsEvent.MAP_READY)
       .then(() => {
-
-        if(this.cars.length > 1) {
-          this.map.setCameraZoom(this.MANY_CARS_ZOOM_LEVEL);
-        }
-
         for(var i = 0; i < this.cars.length; i++) {
           this.subscribeCarByImei(this.cars[i].Imei);
         }
@@ -124,41 +104,50 @@ export class HomePage {
   subscribeCarByImei(imei : string) {
     this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges()
     .subscribe(result => {
-      // Recupera o ultimo tracker
-      console.log('events', result);
       var lastTracker = null;
+      var lastSos = null;
       Object.keys(result).map(key => { 
-        if(result[key].Tipo.toLowerCase() == 'tracker') {
-          lastTracker = result[key];
+        switch(result[key].Tipo.toLowerCase()) {
+          case 'tracker':
+            lastTracker = result[key];
+            break;
+          case 'help me':
+            lastSos = result[key];
+            break;
+          case 'help me off':
+            lastSos = result[key];
+            break;
         }
       });
 
-      // Se nenhum evento de tracker for encontrado, a função é encerrada
-      if(!lastTracker) {
+      const car = this.getCarByImei(lastTracker.Imei);
+      if(car.mine) {
+        this.changeShareButtonStyle(lastSos && lastSos.Tipo == 'help me');
+      } else {
+        car.sharing = lastSos && lastSos.Tipo == 'help me';
+        if(this.currentMarkers[lastTracker.Imei]) {
+          this.currentMarkers[lastTracker.Imei].setVisible(car.sharing);
+        }
+      }
+      
+      if(!car.mine && !car.sharing) {
         return;
       }
-      console.log(lastTracker);
 
       const latlng = {
         lat: lastTracker.Latitude,
         lng: lastTracker.Longitude
       };
-      
+    
       // Anima a camera apenas se existir um carro
       if(this.countVisibleCars() == 1) {
         this.map.animateCamera({
-          'target': latlng,
+          'target': latlng
         }, function() {
           console.log("Camera position changed.");
         });
       }
       
-      // Adiciona marcador do carro
-      const car = this.findCarByImei(lastTracker.Imei);
-      if(!car.mine && !car.sharing) {
-        return;
-      }
-
       if(this.currentMarkers[lastTracker.Imei]) {
         this.currentMarkers[lastTracker.Imei].setPosition(latlng);
       } else {
@@ -175,15 +164,29 @@ export class HomePage {
     });
   }
 
-  findCarByImei(imei: string) : any{
-    for(var i = 0; i < this.cars.length; i++) {
-      if(this.cars[i].Imei == imei) {
-        return this.cars[i];
-      }
-    }
-    return null;
+  onSharePositionClick() : void {
+      const date = new Date();
+      const dateYear = date.getFullYear();
+      const dateMonth = this.zeroLeft(date.getMonth() + 1);
+      const dateDate = this.zeroLeft(date.getDate());
+      const dateHour = this.zeroLeft(date.getHours());
+      const dateMinutes = this.zeroLeft(date.getMinutes());
+      const dateSeconds = this.zeroLeft(date.getSeconds());
+      const keyDate = dateYear + dateMonth + dateDate + dateHour + dateMinutes + dateSeconds;
+      const myCarImei = this.getMyCarImei();
+      const key = "data" + keyDate + "imei" + myCarImei;
+      this.db.database.ref().child('events').child(key).set({
+        Data: dateDate + "/" + dateMonth + "/" + dateYear + "-" + dateHour + "-" + dateMinutes + "-" + dateSeconds,//"07/01/2018-12-40-24",
+        Imei: myCarImei,
+        Latitude: "0",
+        Longitude: "0",
+        Tipo: this.sharingPosition ? 'help me off' : 'help me'
+      });
   }
 
+  /**
+   * Conta a quantidade de carros disponiveis para exibição no mapa
+   */
   countVisibleCars() : number {
     var count = 0;
     for(var i = 0; i < this.cars.length; i++) {
@@ -194,18 +197,55 @@ export class HomePage {
 
     return count;
   }
- 
-  onSharePositionClick() : void {
-    console.log(this.currentUser);
-      this.currentUser.share = !this.currentUser.share;
-      this.usersProvider.updateUser(this.currentUser.uid, this.currentUser);
-      this.changeShareButtonStyle(this.currentUser.share);
+
+  /**
+   * Recupera o Imei do carro do usuário (Partindo da premissa de que existe apenas um carro por usuario)
+   */
+  getMyCarImei() {
+    for(var i = 0; i < this.cars.length; i++) {
+      if(this.cars[i].mine) {
+        return this.cars[i].Imei;
+      }
+    }
+
+    return null;
   }
 
+  /**
+   * Pesquisa o imei desejado na lista de carros carregados
+   * @param imei Imei a ser pesquisado
+   */
+  getCarByImei(imei : string) {
+    for(var i = 0; i < this.cars.length; i++) {
+      if(this.cars[i].Imei == imei) {
+        return this.cars[i];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Altera o botão de compartilhamento conforme status do usuario
+   * @param sharing Informaçao se o usuario está compartilhando a posição
+   */
   changeShareButtonStyle(sharing : boolean) {
+    this.sharingPosition = sharing;
     this.shareButtonShow = true;
     this.shareButtonColor = sharing ? "green" : "#8B1C00"
     this.shareButtonText = sharing ? "PARAR COMPARTILHAMENTO" : "COMPARTILHAR LOCALIZAÇÃO";
+  }
+
+  /**
+   * Adiciona zero a esqueda se o valor for menor do que 10
+   * @param value Numero
+   */
+  zeroLeft(value : any) {
+    if(value < 10) {
+      value = "0" + value;
+      return value;
+    }
+    return JSON.stringify(value);
   }
 
 }
