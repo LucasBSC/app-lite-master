@@ -52,10 +52,10 @@ export class MyApp {
       console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
     };
 
-    window["plugins"].OneSignal
-      .startInit("d66155af-63c6-487e-ae18-8895b0d4cf81", "331854874035")
-      .handleNotificationOpened(notificationOpenedCallback)
-      .endInit();
+    // window["plugins"].OneSignal
+    //   .startInit("d66155af-63c6-487e-ae18-8895b0d4cf81", "331854874035")
+    //   .handleNotificationOpened(notificationOpenedCallback)
+    //   .endInit();
     });
   }
 
