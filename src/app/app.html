@@ -16,10 +16,9 @@
       </button>
 	  <ion-item  >
         <ion-icon name="ios-radio" item-left></ion-icon>
-		
-		<ion-label>Ativar Alarme</ion-label>
-    <ion-toggle [(ngModel)]="o"></ion-toggle>
-      </ion-item>
+		    <ion-label>Ativar Alarme</ion-label>
+        <ion-toggle [(ngModel)]="alarmToggle" (ngModelChange)="alarmToggleChanged($event)"></ion-toggle>
+    </ion-item>
 	  
       <!--<button menuClose ion-item (click)="doPrompt()">Insira seu Smart Code
         <ion-icon name="lock" item-left></ion-icon>

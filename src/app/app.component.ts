@@ -10,23 +10,42 @@ import { ContatoPage } from '../pages/contato/contato';
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { LoginPage } from '../pages/login/login';
+import { UsersProvider } from '../providers/users/users';
+import axios from 'axios';
+import { Config } from '../config';
+import { AngularFireDatabase } from 'angularfire2/database';
 
 @Component({
   templateUrl: 'app.html'
 })
 export class MyApp {
   @ViewChild(Nav) nav: Nav;
-
   rootPage: any = LoginPage;
-
   pages: Array<{title: string, component: any, icon?: string}>;
+
+  currentUser: any;
+  alarmToggle : any;
+
+  config: any = {
+    api: {
+      urls : {
+        baseUrl: "http://173.230.133.203:8082/api",
+      },
+      auth: {
+        user: "contato@interakt.com.br",
+        password: "renault2016"
+      }
+    }
+  };
 
   constructor(
     private afAuth: AngularFireAuth,
     public platform: Platform, 
     public statusBar: StatusBar, 
     public splashScreen: SplashScreen,
-    public Alert: AlertController
+    public Alert: AlertController,
+    private usersProvider: UsersProvider,
+    public db: AngularFireDatabase
   ) {
     this.initializeApp();
 
@@ -35,10 +54,8 @@ export class MyApp {
       { title: 'Tela Inicial', component: HomePage, icon: 'home' },
       { title: 'Histórico', component: ListPage, icon: 'pin' },
       { title: 'Pagamento', component: PagamentoPage, icon: 'cash' },
-	  { title: 'Contato', component:ContatoPage, icon: 'people' },
-     
+	    { title: 'Contato', component:ContatoPage, icon: 'people' },
     ];
-
   }
 
   initializeApp() {
@@ -52,10 +69,15 @@ export class MyApp {
       console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
     };
 
-    window["plugins"].OneSignal
+    try {
+      window["plugins"].OneSignal
       .startInit("d66155af-63c6-487e-ae18-8895b0d4cf81", "331854874035")
       .handleNotificationOpened(notificationOpenedCallback)
       .endInit();
+    } catch (e) {
+      console.log("Não possível carregar o onesignal", e);
+    }
+    
     });
   }
 
@@ -120,5 +142,94 @@ export class MyApp {
     });
 
     alert.present();
+  }
+
+  alarmToggleChanged(e) {
+    this.db.database.ref('users/' + this.afAuth.auth.currentUser.uid).once("value").then((snapshot) => {
+      const cars = (snapshot.val() && snapshot.val().cars);
+      var imei = null;
+      Object.keys(cars).map((key) => {
+        imei = cars[key].Imei;
+      });
+
+      const messasge = "Para proceder com a ativação do alarme certifique-se que seu veículo encontra-se desligado e com as portas fechadas. Você confirma?";
+      if(this.alarmToggle) {
+        if(!confirm(messasge)) {
+          this.alarmToggle = false;
+          return;
+        }
+      }
+
+      axios({
+        method: 'GET',
+        url: this.config.api.urls.baseUrl + "/devices",
+        auth: {
+          username: this.config.api.auth.user,
+          password: this.config.api.auth.password
+        }
+      }).then((info) => {
+        this.devicesListSuccess(info.data, imei);    
+      }).catch((e) => {
+        console.log(e);
+      })
+    });
+  }
+
+  devicesListSuccess(data: any, imei : string) {
+    var userTraccar = null;
+    for(var i = 0; i < data.length; i++) {
+      if(data[i].uniqueId == imei) {
+        userTraccar = data[i];
+        break;
+      }
+    }
+
+    if(!userTraccar) {
+      alert("Nenhum usuário foi encontrado para o seu UID, por favor contacte o suporte");
+      return;
+    }
+
+    axios({
+      method: 'POST',
+      url: this.config.api.urls.baseUrl + "/commands/send",
+      auth: {
+        username: this.config.api.auth.user,
+        password: this.config.api.auth.password
+      },
+      data: this.alarmToggle ? this.getAlarmArmObj(userTraccar.id) : this.getAlarmDisarmObj(userTraccar.id)
+    }).then((info) => {
+      if(info.status == 200 || info.status == 202) {
+        alert("Comando enviado com sucesso");
+      } else {
+        alert("Não foi possível enviar o comando, contacte o suporte informando o seguinte erro: (" + info.status + ")")
+      }
+      console.log("s", info);
+    }).catch((e) => {
+      alert("Não foi possível enviar o comando, contacte o suporte");
+      console.log("n", e);
+    });;
+
+  }
+
+  getAlarmArmObj(deviceId: number) {
+    return {
+      "id": 1,
+      "attributes": {},
+      "deviceId": deviceId,
+      "type": "alarmArm",
+      "textChannel": false,
+      "description": "Armar Veículo"
+    };
+  }
+
+  getAlarmDisarmObj(deviceId: number) {
+    return {
+      "id": 2,
+      "attributes": {},
+      "deviceId": deviceId,
+      "type": "alarmDisarm",
+      "textChannel": false,
+      "description": "Desarmar Veículo"
+    };
   }
 }
