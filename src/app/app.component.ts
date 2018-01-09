@@ -11,9 +11,10 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { LoginPage } from '../pages/login/login';
 import { UsersProvider } from '../providers/users/users';
-import axios from 'axios';
-import { Config } from '../config';
 import { AngularFireDatabase } from 'angularfire2/database';
+import { Events } from 'ionic-angular';
+import { Dialogs } from '@ionic-native/dialogs';
+import axios from 'axios';
 
 @Component({
   templateUrl: 'app.html'
@@ -45,7 +46,9 @@ export class MyApp {
     public splashScreen: SplashScreen,
     public Alert: AlertController,
     private usersProvider: UsersProvider,
-    public db: AngularFireDatabase
+    public db: AngularFireDatabase,
+    public events: Events,
+    private dialogs: Dialogs
   ) {
     this.initializeApp();
 
@@ -56,6 +59,32 @@ export class MyApp {
       { title: 'Pagamento', component: PagamentoPage, icon: 'cash' },
 	    { title: 'Contato', component:ContatoPage, icon: 'people' },
     ];
+
+    events.subscribe("user:logged", (user) => {
+      this.db.database.ref('users/' + this.afAuth.auth.currentUser.uid).once("value").then((snapshot) => {
+        const cars = (snapshot.val() && snapshot.val().cars);
+        var imei = null;
+        Object.keys(cars).map((key) => {
+          imei = cars[key].Imei;
+        });
+
+        this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges().subscribe((events) => {
+          var lastAlarmEvent = null;
+          Object.keys(events).map(key => { 
+            switch(events[key].Tipo.toLowerCase()) {
+              case 'lt':
+                lastAlarmEvent = events[key];
+                break;
+              case 'mt':
+                lastAlarmEvent = events[key];
+                break;
+            }
+          });
+
+          this.alarmToggle = lastAlarmEvent.Tipo.toLowerCase() == 'lt'
+        });
+      });
+    });
   }
 
   initializeApp() {
@@ -154,8 +183,7 @@ export class MyApp {
 
       const messasge = "Para proceder com a ativação do alarme certifique-se que seu veículo encontra-se desligado e com as portas fechadas. Você confirma?";
       if(this.alarmToggle) {
-        if(!confirm(messasge)) {
-          this.alarmToggle = false;
+        if(!this.dialogs.confirm(messasge, 'Confirmação', ["Ok", "Cancelar"])) {
           return;
         }
       }
@@ -185,7 +213,7 @@ export class MyApp {
     }
 
     if(!userTraccar) {
-      alert("Nenhum usuário foi encontrado para o seu UID, por favor contacte o suporte");
+      this.dialogs.alert("Nenhum usuário foi encontrado para o seu UID, por favor contacte o suporte", "Ops!!!");
       return;
     }
 
@@ -198,17 +226,27 @@ export class MyApp {
       },
       data: this.alarmToggle ? this.getAlarmArmObj(userTraccar.id) : this.getAlarmDisarmObj(userTraccar.id)
     }).then((info) => {
-      if(info.status == 200 || info.status == 202) {
-        alert("Comando enviado com sucesso");
-      } else {
-        alert("Não foi possível enviar o comando, contacte o suporte informando o seguinte erro: (" + info.status + ")")
+      switch(info.status) {
+        case 200:
+          this.dialogs.alert("Comando enviado com sucesso!", "Sucesso");
+          break;
+        case 202:
+          this.alarmToggle = !this.alarmToggle;
+          this.dialogs.alert("Comando não enviado! Favor ligar e desligar veículo para reenviar o comando.", "Ops!!!")
+          break;
+        case 404:
+          this.alarmToggle = !this.alarmToggle;
+          this.dialogs.alert("Comando não enviado devido a erro de comunicação! Tente novamente ou contate o suporte.", "Ops!!!");
+          break;
+        default:
+          this.alarmToggle = !this.alarmToggle;
+          this.dialogs.alert("Não foi possível enviar o comando, contacte o suporte informando o seguinte erro: (" + info.status + ")", "Ops!!!");
+          break;
       }
-      console.log("s", info);
     }).catch((e) => {
-      alert("Não foi possível enviar o comando, contacte o suporte");
-      console.log("n", e);
+      this.alarmToggle = !this.alarmToggle;
+      this.dialogs.alert("Não foi possível enviar o comando, contacte o suporte", "Ops!!!");
     });;
-
   }
 
   getAlarmArmObj(deviceId: number) {
