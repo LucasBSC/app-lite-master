@@ -26,23 +26,53 @@ export class HomePage {
   @ViewChild('map') mapRef: ElementRef;
   map: any;
   events: Observable<any[]>;
+
+  /**
+   * Marcadores no mapa
+   */
   currentMarkers: any[] = [];
+
+  /**
+   * Carros carregados
+   */
   cars: any[] = [];
+
+  /**
+   * Usuario logado
+   */
   currentUser: any;
+
+  /**
+   * Verifica se o usuário está compartilhando a localização
+   */
   sharingPosition: boolean;
   
+
+  /**
+   * Configurações do botão de compartilhar
+   */
   shareButtonColor: string = "";
   shareButtonShow: boolean = false;
   shareButtonText: string = "COMPARTILHAR LOCALIZAÇÃO";
 
+  /**
+   * Configurações da indicador do alarme
+   */
+  alarmDivColor: string;
+  
+  /**
+   * Constantes
+   */
   DEFAULT_ZOOM_LEVEL: number = 11;
   DEFAULT_PANIC_ON: "help me";
-  DEFAULT_PANIC_OFF: "help me"
+  DEFAULT_PANIC_OFF: "help me off"
 
   constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
-    
   }
 
+  /**
+   * Carrega os carros do usuário
+   */
   ionViewDidLoad() {
     // Carrega o usuário atual
     const user = this.usersProvider.findByUid(this.afAuth.auth.currentUser.uid);
@@ -50,7 +80,6 @@ export class HomePage {
     user.subscribe((users) => {
       // Carrega os carros do dono
       this.currentUser = users[0];
-      console.log("current user", this.currentUser);
       let userCars = users[0]['cars'];
       Object.keys(userCars).map(key => {
         userCars[key]["mine"] = true; 
@@ -78,6 +107,9 @@ export class HomePage {
     })
   }
 
+  /**
+   * Instancia um novo mapa e inscreve os carros carregados
+   */
   loadGoogleMap() {
     let mapOptions: GoogleMapOptions = {
       controls: {
@@ -101,11 +133,18 @@ export class HomePage {
       });
   }
 
+  /**
+   * Inscreve o carro na sua lista de eventos
+   * @param imei Imei do carro a ser inscrito
+   */
   subscribeCarByImei(imei : string) {
     this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges()
     .subscribe(result => {
+
+      // Recupera os ultimos eventos relavantes para o carro
       var lastTracker = null;
       var lastSos = null;
+      var lastAlarm = null;
       Object.keys(result).map(key => { 
         switch(result[key].Tipo.toLowerCase()) {
           case 'tracker':
@@ -117,19 +156,30 @@ export class HomePage {
           case 'help me off':
             lastSos = result[key];
             break;
+          case 'lt':
+          case 'mt':
+            lastAlarm = result[key];
+            break;
         }
       });
 
+      // Recupera o carro pelo Imei
       const car = this.getCarByImei(lastTracker.Imei);
+
+      // Verifica se o dono do carro está com o compartilhamento  e alarme ligados 
       if(car.mine) {
         this.changeShareButtonStyle(lastSos && lastSos.Tipo == 'help me');
-      } else {
+        this.alarmDivColor = lastAlarm.Tipo.toLowerCase() == 'lt' ? 'green' : 'red';
+      } 
+      // Verifica se o carro dos amigos está sendo compartilhado no momento
+      else {
         car.sharing = lastSos && lastSos.Tipo == 'help me';
         if(this.currentMarkers[lastTracker.Imei]) {
           this.currentMarkers[lastTracker.Imei].setVisible(car.sharing);
         }
       }
       
+      // Apenas muda a posição do carro em questão se ele for do usuario ou estiver com o compartilhamento ligado
       if(!car.mine && !car.sharing) {
         return;
       }
@@ -164,6 +214,9 @@ export class HomePage {
     });
   }
 
+  /**
+   * Envia um novo evento para habilitar / desabilitar o compartilhamento do carro
+   */
   onSharePositionClick() : void {
       const date = new Date();
       const dateYear = date.getFullYear();

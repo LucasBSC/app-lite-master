@@ -4,6 +4,7 @@ import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams, ToastController } from 'ionic-angular';
 import { User } from '../../models/user';
 import { AlertController } from 'ionic-angular';
+import { Events } from 'ionic-angular';
 /**
  * Generated class for the LoginPage page.
  *
@@ -32,13 +33,15 @@ isActiveToggleTextPassword: Boolean = true;
     private toast: ToastController,
     public navCtrl: NavController,
     public navParams: NavParams,
-	public Alert: AlertController
+  public Alert: AlertController,
+  public events: Events
   ) { }
 
   ionViewWillLoad() {
     this.afAuth.authState.subscribe(user => {
       if (user) {
         this.navCtrl.setRoot(HomePage);
+        this.events.publish("user:logged", user);
       }
     });
   }
@@ -53,6 +56,7 @@ isActiveToggleTextPassword: Boolean = true;
           }).present();
         }
         this.navCtrl.setRoot(HomePage);
+        this.events.publish("user:logged", result);
       })
       .catch(e => {
         this.toast.create({
