@@ -88,21 +88,23 @@ export class HomePage {
       
       // Carrega os carros compartilhados
       let sharedUsers = users[0]['sharedWithMe'];
-      Object.keys(sharedUsers).map(key => {
-        // Sub nos usuarios que compartilham com o usuario logado
-        const sharedUser = this.usersProvider.findByUid(sharedUsers[key]);
-        sharedUser.subscribe((users) => {
-          const user : any = users[0];
-          const sharedCars = user['cars'];
-
-          // Varre os carros do usuario compartilhdador
-          Object.keys(sharedCars).map(key => {
-            sharedCars[key]["mine"] = false; 
-            sharedCars[key]["sharing"] = false; 
-            this.cars.push(sharedCars[key]);
-          });
-        }) 
-      });
+      if(sharedUsers) {
+        Object.keys(sharedUsers).map(key => {
+          // Sub nos usuarios que compartilham com o usuario logado
+          const sharedUser = this.usersProvider.findByUid(sharedUsers[key]);
+          sharedUser.subscribe((users) => {
+            const user : any = users[0];
+            const sharedCars = user['cars'];
+  
+            // Varre os carros do usuario compartilhdador
+            Object.keys(sharedCars).map(key => {
+              sharedCars[key]["mine"] = false; 
+              sharedCars[key]["sharing"] = false; 
+              this.cars.push(sharedCars[key]);
+            });
+          }) 
+        });
+      }
       this.loadGoogleMap();
     })
   }
@@ -168,8 +170,8 @@ export class HomePage {
 
       // Verifica se o dono do carro está com o compartilhamento  e alarme ligados 
       if(car.mine) {
-        this.changeShareButtonStyle(lastSos && lastSos.Tipo == 'help me');
-        this.alarmDivColor = lastAlarm.Tipo.toLowerCase() == 'lt' ? 'green' : 'red';
+        this.changeShareButtonStyle(lastSos && lastSos.Tipo.toLowerCase() == 'help me');
+        this.alarmDivColor = lastAlarm && lastAlarm.Tipo.toLowerCase() == 'lt' ? 'green' : 'red';
       } 
       // Verifica se o carro dos amigos está sendo compartilhado no momento
       else {

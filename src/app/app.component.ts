@@ -183,23 +183,33 @@ export class MyApp {
 
       const messasge = "Para proceder com a ativação do alarme certifique-se que seu veículo encontra-se desligado e com as portas fechadas. Você confirma?";
       if(this.alarmToggle) {
-        if(!this.dialogs.confirm(messasge, 'Confirmação', ["Ok", "Cancelar"])) {
-          return;
-        }
+        this.dialogs.confirm(messasge, 'Confirmação', ["Ok", "Cancelar"]).then((value) => {
+          if(value === 1) {
+            this.devicesList(imei);
+          } else {
+            this.alarmToggle = false;
+          }
+        })
+      } else {
+        this.devicesList(imei);
       }
 
-      axios({
-        method: 'GET',
-        url: this.config.api.urls.baseUrl + "/devices",
-        auth: {
-          username: this.config.api.auth.user,
-          password: this.config.api.auth.password
-        }
-      }).then((info) => {
-        this.devicesListSuccess(info.data, imei);    
-      }).catch((e) => {
-        console.log(e);
-      })
+      
+    });
+  }
+
+  devicesList(imei : string) {
+    axios({
+      method: 'GET',
+      url: this.config.api.urls.baseUrl + "/devices",
+      auth: {
+        username: this.config.api.auth.user,
+        password: this.config.api.auth.password
+      }
+    }).then((info) => {
+      this.devicesListSuccess(info.data, imei);    
+    }).catch((e) => {
+      console.log(e);
     });
   }
 
