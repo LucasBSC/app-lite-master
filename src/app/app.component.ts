@@ -14,6 +14,7 @@ import { UsersProvider } from '../providers/users/users';
 import { AngularFireDatabase } from 'angularfire2/database';
 import { Events } from 'ionic-angular';
 import { Dialogs } from '@ionic-native/dialogs';
+import { FCM } from '@ionic-native/fcm';
 import axios from 'axios';
 
 @Component({
@@ -48,7 +49,8 @@ export class MyApp {
     private usersProvider: UsersProvider,
     public db: AngularFireDatabase,
     public events: Events,
-    private dialogs: Dialogs
+    private dialogs: Dialogs,
+    private fcm: FCM
   ) {
     this.initializeApp();
 
@@ -59,9 +61,52 @@ export class MyApp {
       { title: 'Pagamento', component: PagamentoPage, icon: 'cash' },
 	    { title: 'Contato', component:ContatoPage, icon: 'people' },
     ];
-
-    events.subscribe("user:logged", (user) => {
+    fcm.subscribeToTopic('default');
+    events.subscribe("user:logged", (userLogged) => {
       this.db.database.ref('users/' + this.afAuth.auth.currentUser.uid).once("value").then((snapshot) => {
+        const user = snapshot.val();
+        fcm.getToken().then(token=>{
+          // Verifica se o token já existe
+          var tokenExists = false;
+          if(user.devices) {
+            Object.keys(user.devices).map(key => {
+              if(user.devices[key] == token) {
+                tokenExists = true;
+              }
+            });
+          }
+
+          if(!tokenExists) {
+            if(!user.devices) {
+              user.devices = [];
+            }
+            user.devices.push(token);
+            this.usersProvider.updateUser(user.uid, user);
+          }
+          console.log('get', token);
+        })
+        
+        fcm.onTokenRefresh().subscribe(token=>{
+          // Verifica se o token já existe
+          var tokenExists = false;
+          if(user.devices) {
+            Object.keys(user.devices).map(key => {
+              if(user.devices[key] == token) {
+                tokenExists = true;
+              }
+            });
+          }
+
+          if(!tokenExists) {
+            if(!user.devices) {
+              user.devices = [];
+            }
+            user.devices.push(token);
+            this.usersProvider.updateUser(user.uid, user);
+          }
+          console.log('renwe', token);
+        })
+        
         const cars = (snapshot.val() && snapshot.val().cars);
         var imei = null;
         Object.keys(cars).map((key) => {

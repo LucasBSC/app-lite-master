@@ -1,6 +1,7 @@
 import { AngularFireDatabase } from 'angularfire2/database';
 import { BrowserModule } from '@angular/platform-browser';
 import { Dialogs } from '@ionic-native/dialogs';
+import { FCM } from '@ionic-native/fcm';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 
@@ -58,7 +59,8 @@ import { EmailProvider } from '../providers/email/email';
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     UsersProvider,
     EmailProvider,
-    Dialogs
+    Dialogs,
+    FCM
   ]
 })
 export class AppModule {}
