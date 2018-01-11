@@ -64,6 +64,7 @@ export class MyApp {
     fcm.subscribeToTopic('default');
     events.subscribe("user:logged", (userLogged) => {
       this.db.database.ref('users/' + this.afAuth.auth.currentUser.uid).once("value").then((snapshot) => {
+        this.currentUser = snapshot.val();
         const cars = (snapshot.val() && snapshot.val().cars);
         var imei = null;
         Object.keys(cars).map((key) => {
@@ -71,11 +72,11 @@ export class MyApp {
         });
 
         fcm.getToken().then(token => {
-          this.sendTokenToServer(cars, token);
+          this.sendTokenToServer(cars, token, this.currentUser);
         })
         
         fcm.onTokenRefresh().subscribe(token => {
-          this.sendTokenToServer(cars, token);
+          this.sendTokenToServer(cars, token, this.currentUser);
         })
 
         this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges().subscribe((events) => {
@@ -291,12 +292,13 @@ export class MyApp {
     };
   }
 
-  sendTokenToServer(cars, token) {
+  sendTokenToServer(cars, token, user) {
     try {
       Object.keys(cars).map(key => {
-        this.db.database.ref().child("devicesUsers").child(cars[key].Imei).set({
+        this.db.database.ref().child("devicesUsers").child("imei" + cars[key].Imei + "token" + token).set({
           imei: cars[key].Imei, 
-          token: token
+          token: token,
+          uid: user.uid
         });
       });
     } catch (e) {
