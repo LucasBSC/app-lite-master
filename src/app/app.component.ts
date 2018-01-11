@@ -58,60 +58,25 @@ export class MyApp {
     this.pages = [
       { title: 'Tela Inicial', component: HomePage, icon: 'home' },
       { title: 'Histórico', component: ListPage, icon: 'pin' },
-      { title: 'Pagamento', component: PagamentoPage, icon: 'cash' },
+      //{ title: 'Pagamento', component: PagamentoPage, icon: 'cash' },
 	    { title: 'Contato', component:ContatoPage, icon: 'people' },
     ];
     fcm.subscribeToTopic('default');
     events.subscribe("user:logged", (userLogged) => {
       this.db.database.ref('users/' + this.afAuth.auth.currentUser.uid).once("value").then((snapshot) => {
-        const user = snapshot.val();
-        fcm.getToken().then(token=>{
-          // Verifica se o token já existe
-          var tokenExists = false;
-          if(user.devices) {
-            Object.keys(user.devices).map(key => {
-              if(user.devices[key] == token) {
-                tokenExists = true;
-              }
-            });
-          }
-
-          if(!tokenExists) {
-            if(!user.devices) {
-              user.devices = [];
-            }
-            user.devices.push(token);
-            this.usersProvider.updateUser(user.uid, user);
-          }
-          console.log('get', token);
-        })
-        
-        fcm.onTokenRefresh().subscribe(token=>{
-          // Verifica se o token já existe
-          var tokenExists = false;
-          if(user.devices) {
-            Object.keys(user.devices).map(key => {
-              if(user.devices[key] == token) {
-                tokenExists = true;
-              }
-            });
-          }
-
-          if(!tokenExists) {
-            if(!user.devices) {
-              user.devices = [];
-            }
-            user.devices.push(token);
-            this.usersProvider.updateUser(user.uid, user);
-          }
-          console.log('renwe', token);
-        })
-        
         const cars = (snapshot.val() && snapshot.val().cars);
         var imei = null;
         Object.keys(cars).map((key) => {
           imei = cars[key].Imei;
         });
+
+        fcm.getToken().then(token => {
+          this.sendTokenToServer(cars, token);
+        })
+        
+        fcm.onTokenRefresh().subscribe(token => {
+          this.sendTokenToServer(cars, token);
+        })
 
         this.db.list('/events', ref => ref.orderByChild('Imei').equalTo(imei)).valueChanges().subscribe((events) => {
           var lastAlarmEvent = null;
@@ -324,5 +289,18 @@ export class MyApp {
       "textChannel": false,
       "description": "Desarmar Veículo"
     };
+  }
+
+  sendTokenToServer(cars, token) {
+    try {
+      Object.keys(cars).map(key => {
+        this.db.database.ref().child("devicesUsers").child(cars[key].Imei).set({
+          imei: cars[key].Imei, 
+          token: token
+        });
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
 }

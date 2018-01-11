@@ -168,6 +168,10 @@ export class HomePage {
       // Recupera o carro pelo Imei
       const car = this.getCarByImei(lastTracker.Imei);
 
+      if(!car) {
+        return;
+      }
+
       // Verifica se o dono do carro está com o compartilhamento  e alarme ligados 
       if(car.mine) {
         this.changeShareButtonStyle(lastSos && lastSos.Tipo.toLowerCase() == 'help me');
