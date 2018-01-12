@@ -37,7 +37,7 @@ exports.sendPushNotification = functions.database.ref('/events/{eventId}').onWri
   return Promise.all([devicesUsersPromise]).then((devicesUsersFb) => {
     var tokens = [];
     if(event.Tipo.toLowerCase() == 'help me') {
-      admin.database().ref("users").once("value").then((snapshot) => {
+      return admin.database().ref("users").once("value").then((snapshot) => {
         const users = snapshot.val();
         var userOwner = null;
 
@@ -57,21 +57,14 @@ exports.sendPushNotification = functions.database.ref('/events/{eventId}').onWri
           const uid = userOwner.sharingWithOthers[keySharing];
           console.log(uid);
           
-          admin.database().ref("devicesUsers").orderByChild("uid").equalTo(uid).once("value").then((devicesUsersFbHelp) => {
+          return admin.database().ref("devicesUsers").orderByChild("uid").equalTo(uid).once("value").then((devicesUsersFbHelp) => {
             const devicesUsers = devicesUsersFbHelp.val();
 
             Object.keys(devicesUsers).map(deviceUsersKey => {
               tokens.push(devicesUsers[deviceUsersKey].token);
             });
 
-            const payload = {
-              notification: {
-                title: "Compartilhamento de Posição",
-                body: userOwner.name + " está compartilhando sua localização com você",
-                sound: "default"
-              }
-            }
-            return admin.messaging().sendToDevice(tokens, payload);
+            return sendPush(tokens, title, body);
           });
         });
       });
@@ -91,10 +84,8 @@ exports.sendPushNotification = functions.database.ref('/events/{eventId}').onWri
       if(!title || !body) {
         return;
       }
-      const payload = {
-        notification: { title, body, sound: "default" }
-      }
-      return admin.messaging().sendToDevice(tokens, payload);
+      
+      return sendPush(tokens, title, body);
     }
     
   })
@@ -160,3 +151,29 @@ exports.sendPushNotification = functions.database.ref('/events/{eventId}').onWri
     })
   }); */
 });
+
+function sendPush(tokens, title, body) {
+  
+  const payload = {
+    notification: {
+      sound: 'default',
+      icon: 'icon',
+      title, body
+    }
+  }
+
+  const options = {
+    priority: "high"
+  };
+  console.log('tokens', tokens);
+  console.log('payload', payload);
+  return admin.messaging().sendToDevice(tokens, payload, options).then((response) => {
+    response.results.forEach((result, index) => {
+      if(result.error) {
+        console.error(tokens[index] + " - Error", error);
+      } else {
+        console.log(tokens[index] + " - Sent");
+      }
+    });
+  });
+}
