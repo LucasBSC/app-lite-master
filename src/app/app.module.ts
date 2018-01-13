@@ -24,6 +24,7 @@ import { GoogleMaps } from '@ionic-native/google-maps';
 
 import { UsersProvider } from '../providers/users/users';
 import { EmailProvider } from '../providers/email/email';
+import { TraccarProvider } from '../providers/traccar/traccar';
 
 @NgModule({
   declarations: [
@@ -59,6 +60,7 @@ import { EmailProvider } from '../providers/email/email';
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     UsersProvider,
     EmailProvider,
+    TraccarProvider,
     Dialogs,
     FCM
   ]

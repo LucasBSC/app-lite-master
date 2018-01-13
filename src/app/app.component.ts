@@ -11,6 +11,7 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { LoginPage } from '../pages/login/login';
 import { UsersProvider } from '../providers/users/users';
+import { TraccarProvider } from '../providers/traccar/traccar';
 import { AngularFireDatabase } from 'angularfire2/database';
 import { Events } from 'ionic-angular';
 import { Dialogs } from '@ionic-native/dialogs';
@@ -28,17 +29,6 @@ export class MyApp {
   currentUser: any;
   alarmToggle : any;
 
-  config: any = {
-    api: {
-      urls : {
-        baseUrl: "http://173.230.133.203:8082/api",
-      },
-      auth: {
-        user: "contato@interakt.com.br",
-        password: "renault2016"
-      }
-    }
-  };
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -50,10 +40,10 @@ export class MyApp {
     public db: AngularFireDatabase,
     public events: Events,
     private dialogs: Dialogs,
-    private fcm: FCM
+    private fcm: FCM,
+    private traccarProvider: TraccarProvider
   ) {
     this.initializeApp();
-
     // used for an example of ngFor and navigation
     this.pages = [
       { title: 'Tela Inicial', component: HomePage, icon: 'home' },
@@ -204,10 +194,10 @@ export class MyApp {
   devicesList(imei : string) {
     axios({
       method: 'GET',
-      url: this.config.api.urls.baseUrl + "/devices",
+      url: this.traccarProvider.config.api.urls.baseUrl + "/devices",
       auth: {
-        username: this.config.api.auth.user,
-        password: this.config.api.auth.password
+        username: this.traccarProvider.config.api.auth.user,
+        password: this.traccarProvider.config.api.auth.password
       }
     }).then((info) => {
       this.devicesListSuccess(info.data, imei);    
@@ -232,10 +222,10 @@ export class MyApp {
 
     axios({
       method: 'POST',
-      url: this.config.api.urls.baseUrl + "/commands/send",
+      url: this.traccarProvider.config.api.urls.baseUrl + "/commands/send",
       auth: {
-        username: this.config.api.auth.user,
-        password: this.config.api.auth.password
+        username: this.traccarProvider.config.api.auth.user,
+        password: this.traccarProvider.config.api.auth.password
       },
       data: this.alarmToggle ? this.getAlarmArmObj(userTraccar.id) : this.getAlarmDisarmObj(userTraccar.id)
     }).then((info) => {

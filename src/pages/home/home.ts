@@ -4,6 +4,8 @@ import { Observable } from 'rxjs/Observable';
 import { AngularFireAuth } from 'angularfire2/auth';
 import { AngularFireDatabase } from 'angularfire2/database';
 import { UsersProvider } from '../../providers/users/users';
+import { TraccarProvider } from '../../providers/traccar/traccar';
+import { Dialogs } from '@ionic-native/dialogs';
 
 import {
   GoogleMaps,
@@ -67,7 +69,13 @@ export class HomePage {
   DEFAULT_PANIC_ON: "help me";
   DEFAULT_PANIC_OFF: "help me off"
 
-  constructor(public navCtrl: NavController, public db: AngularFireDatabase, private afAuth: AngularFireAuth, private usersProvider: UsersProvider) {
+  constructor(
+    public navCtrl: NavController,
+    public db: AngularFireDatabase,
+    private afAuth: AngularFireAuth,
+    private usersProvider: UsersProvider,
+    private traccarProvider: TraccarProvider,
+    private dialogs: Dialogs) {
   }
 
   /**
@@ -223,23 +231,26 @@ export class HomePage {
   /**
    * Envia um novo evento para habilitar / desabilitar o compartilhamento do carro
    */
-  onSharePositionClick() : void {
-      const date = new Date();
-      const dateYear = date.getFullYear();
-      const dateMonth = this.zeroLeft(date.getMonth() + 1);
-      const dateDate = this.zeroLeft(date.getDate());
-      const dateHour = this.zeroLeft(date.getHours());
-      const dateMinutes = this.zeroLeft(date.getMinutes());
-      const dateSeconds = this.zeroLeft(date.getSeconds());
-      const keyDate = dateYear + dateMonth + dateDate + dateHour + dateMinutes + dateSeconds;
-      const myCarImei = this.getMyCarImei();
-      const key = "data" + keyDate + "imei" + myCarImei;
-      this.db.database.ref().child('events').child(key).set({
-        Data: dateDate + "/" + dateMonth + "/" + dateYear + "-" + dateHour + "-" + dateMinutes + "-" + dateSeconds,//"07/01/2018-12-40-24",
-        Imei: myCarImei,
-        Latitude: "0",
-        Longitude: "0",
-        Tipo: this.sharingPosition ? 'help me off' : 'help me'
+  onSharePositionClick() : void {      
+      this.traccarProvider.getServerDateTime().then((info) => {
+        if(info.data) {
+          const dateTimeArray = info.data.split('-');
+          const dateArray = dateTimeArray[0].split('/');
+          const hourArray = [dateTimeArray[1], dateTimeArray[2], dateTimeArray[3]]
+
+          const keyDate = dateArray[2] + dateArray[1] + dateArray[0] + hourArray[0] + hourArray[1] + hourArray[2];
+          const myCarImei = this.getMyCarImei();
+          const key = "data" + keyDate + "imei" + myCarImei;
+          this.db.database.ref().child('events').child(key).set({
+            Data: info.data,
+            Imei: myCarImei,
+            Latitude: "0",
+            Longitude: "0",
+            Tipo: this.sharingPosition ? 'help me off' : 'help me'
+          });
+        } else {
+          this.dialogs.alert("Não foi possível recuperar a data do servidor");
+        }
       });
   }
 
@@ -294,17 +305,4 @@ export class HomePage {
     this.shareButtonColor = sharing ? "green" : "#8B1C00"
     this.shareButtonText = sharing ? "PARAR COMPARTILHAMENTO" : "COMPARTILHAR LOCALIZAÇÃO";
   }
-
-  /**
-   * Adiciona zero a esqueda se o valor for menor do que 10
-   * @param value Numero
-   */
-  zeroLeft(value : any) {
-    if(value < 10) {
-      value = "0" + value;
-      return value;
-    }
-    return JSON.stringify(value);
-  }
-
 }
