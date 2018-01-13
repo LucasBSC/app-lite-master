@@ -184,9 +184,9 @@ export class MyApp {
         imei = cars[key].Imei;
       });
 
-      const messasge = "Para proceder com a ativação do alarme certifique-se que seu veículo encontra-se desligado e com as portas fechadas. Você confirma?";
+      const messasge = "Para proceder com a ativação do alarme certifique-se, que seu veículo encontra-se desligado e com as portas fechadas. Você confirma?";
       if(this.alarmToggle) {
-        this.dialogs.confirm(messasge, 'Confirmação', ["Ok", "Cancelar"]).then((value) => {
+        this.dialogs.confirm(messasge, 'Confirmação', ["Sim", "Não"]).then((value) => {
           if(value === 1) {
             this.devicesList(imei);
           } else {
