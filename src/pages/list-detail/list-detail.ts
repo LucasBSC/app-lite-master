@@ -29,7 +29,7 @@ export class ListDetailPage {
 
   constructor(public navCtrl: NavController, private navParams: NavParams, db: AngularFireDatabase) {
 
-    var device = db.database.ref('/events/' + this.eventId).once('value');
+    var device = db.database.ref('/historic/' + this.eventId).once('value');
     device.then(results => {      
       this.item = results.val()
     })    

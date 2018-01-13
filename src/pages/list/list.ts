@@ -96,7 +96,7 @@ export class ListPage {
     //   console.log(this.items)
     // });
 
-    this.db.list('events', ref => ref.orderByChild('Imei').equalTo(selectedValue)).snapshotChanges().map(
+    this.db.list('historic', ref => ref.orderByChild('Imei').equalTo(selectedValue)).snapshotChanges().map(
       action =>{ 
         console.log("sss ", action)
         return action.map(
