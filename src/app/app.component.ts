@@ -106,17 +106,9 @@ export class MyApp {
       this.splashScreen.hide();
 
       var notificationOpenedCallback = function(jsonData) {
-      console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
-    };
+        console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
+      };
 
-    try {
-      window["plugins"].OneSignal
-      .startInit("d66155af-63c6-487e-ae18-8895b0d4cf81", "331854874035")
-      .handleNotificationOpened(notificationOpenedCallback)
-      .endInit();
-    } catch (e) {
-      console.log("Não possível carregar o onesignal", e);
-    }
     
     });
   }

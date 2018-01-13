@@ -22,13 +22,45 @@ export class ListDetailPage {
   eventId = this.navParams.get('eventId'); 
   latitude = this.navParams.get('latitude'); 
   longitude = this.navParams.get('longitude'); 
-  item: Observable<any>;
+  item: Object;
   
   @ViewChild('map') mapRef: ElementRef;
   map: any;
 
   constructor(public navCtrl: NavController, private navParams: NavParams, db: AngularFireDatabase) {
-    this.item = db.list('/events/' + this.eventId).valueChanges();
+
+    var device = db.database.ref('/historic/' + this.eventId).once('value');
+    device.then(results => {      
+      this.item = results.val()
+    })    
+
+    //ou
+
+    // db.list('/events/' + this.eventId)
+    // .snapshotChanges()
+    // .map(
+    //   action =>{ 
+    //     return action.map(
+    //       act => {            
+    //         let obj = {}            
+    //         obj[act.payload.key] = act.payload.toJSON()
+    //         return obj;
+    //       }
+    //     )
+    //   }
+    // )
+    // .subscribe(
+    //   result => {
+    //     let aux = {};
+
+    //     result.map(
+    //       res => {
+    //         Object.assign(aux, res)
+    //       }
+    //     )
+    //     this.item = aux
+    //   }
+    // )    
   }
 
   ionViewDidLoad() {
